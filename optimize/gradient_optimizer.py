@@ -21,7 +21,7 @@ class FindParams(object):
             # Starting
             rand_seed = 0,
             start_at = 'mean_plus_rand',
-            
+
             # Optimization
             push_layer = 'prob',
             push_channel = 278,
@@ -63,7 +63,7 @@ class FindParams(object):
             raise Exception('Unknown lr_policy: %s' % self.lr_policy)
 
         assert isinstance(self.push_channel, int), 'push_channel should be an int'
-        assert isinstance(self.push_spatial, tuple) and len(self.push_spatial) == 2, 'push_spatial should be a length 2 tuple'    
+        assert isinstance(self.push_spatial, tuple) and len(self.push_spatial) == 2, 'push_spatial should be a length 2 tuple'
 
         # Concatenate push_channel and push_spatial into push_unit and add to params for conveninece
         self.push_unit = (self.push_channel,) + self.push_spatial
@@ -94,10 +94,10 @@ class FindResults(object):
         self.last_obj = None
         self.last_xx = None
         self.meta_result = None
-        
+
     def update(self, params, ii, acts, idxmax, xx, x0):
         assert params.push_dir > 0, 'push_dir < 0 not yet supported'
-        
+
         self.ii.append(ii)
         self.obj.append(acts[params.push_unit])
         self.idxmax.append(idxmax)
@@ -153,7 +153,7 @@ class FindResults(object):
 
 class GradientOptimizer(object):
     '''Finds images by gradient.'''
-    
+
     def __init__(self, net, data_mean, labels = None, label_layers = None, channel_swap_to_rgb = None):
         self.net = net
         self.data_mean = data_mean
@@ -172,18 +172,18 @@ class GradientOptimizer(object):
 
         print '\n\nStarting optimization with the following parameters:'
         print params
-        
+
         x0 = self._get_x0(params)
         xx, results = self._optimize(params, x0)
         self.save_results(params, results, prefix_template, brave = brave, skipbig = skipbig)
 
         print results.meta_result
-        
+
         return xx
 
     def _get_x0(self, params):
         '''Chooses a starting location'''
-        
+
         np.random.seed(params.rand_seed)
 
         if params.start_at == 'mean_plus_rand':
@@ -196,7 +196,7 @@ class GradientOptimizer(object):
             raise Exception('Unknown start conditions: %s' % params.start_at)
 
         return x0
-        
+
     def _optimize(self, params, x0):
         xx = x0.copy()
         xx = xx[newaxis,:]      # Promote 3D -> 4D
@@ -221,13 +221,13 @@ class GradientOptimizer(object):
                        % (params.push_layer, params.push_spatial, recommended_spatial))
         else:
             assert params.push_spatial == (0,0), 'For FC layers, spatial indices must be (0,0)'
-        
+
         if is_labeled_unit:
             # Sanity check
             push_label = self.labels[params.push_unit[0]]
         else:
             push_label = None
-        
+
         for ii in range(params.max_iter):
             # 0. Crop data
             xx = minimum(255.0, maximum(0.0, xx + self.data_mean)) - self.data_mean     # Crop all values to [0,255]
@@ -247,11 +247,9 @@ class GradientOptimizer(object):
             # idxmax for conv layer will be like:        (37, 4, 37)
             obj = acts[params.push_unit]
 
-            
             # 2. Update results
             results.update(params, ii, acts, idxmax, xx[0], x0)
 
-            
             # 3. Print progress
             if ii > 0:
                 if params.lr_policy == 'progress':
@@ -262,11 +260,11 @@ class GradientOptimizer(object):
                 print '%d' % ii
             old_obj = obj
 
-            push_label_str = ('(%s)' % push_label) if is_labeled_unit else ''
-            max_label_str  = ('(%s)' % self.labels[idxmax[0]]) if is_labeled_unit else ''
-            print '     push unit: %16s with value %g %s' % (params.push_unit, acts[params.push_unit], push_label_str)
-            print '       Max idx: %16s with value %g %s' % (idxmax, valmax, max_label_str)
-            print '             X:', xx.min(), xx.max(), norm(xx)
+            # push_label_str = ('(%s)' % push_label) if is_labeled_unit else ''
+            # max_label_str  = ('(%s)' % self.labels[idxmax[0]]) if is_labeled_unit else ''
+            # print '     push unit: %16s with value %g %s' % (params.push_unit, acts[params.push_unit], push_label_str)
+            # print '       Max idx: %16s with value %g %s' % (idxmax, valmax, max_label_str)
+            # print '             X:', xx.min(), xx.max(), norm(xx)
 
 
             # 4. Do backward pass to get gradient
@@ -278,7 +276,7 @@ class GradientOptimizer(object):
             backout = self.net.backward_from_layer(params.push_layer, diffs if is_conv else diffs[:,:,0,0])
 
             grad = backout['data'].copy()
-            print '          grad:', grad.min(), grad.max(), norm(grad)
+            # print '          grad:', grad.min(), grad.max(), norm(grad)
             if norm(grad) == 0:
                 print 'Grad exactly 0, failed'
                 results.meta_result = 'Metaresult: grad 0 failure'
@@ -306,7 +304,7 @@ class GradientOptimizer(object):
             else:
                 raise Exception('Unimlemented lr_policy')
 
-            
+
             # 6. Apply gradient update and regularizations
             if ii < params.max_iter-1:
                 # Skip gradient and regularizations on the very last step (so the above printed info is valid for the last step)
@@ -360,7 +358,7 @@ class GradientOptimizer(object):
         results_and_params = combine_dicts((('p.', params.__dict__),
                                             ('r.', results.__dict__)))
         prefix = prefix_template % results_and_params
-        
+
         if os.path.isdir(prefix):
             if prefix[-1] != '/':
                 prefix += '/'   # append slash for dir-only template
@@ -377,21 +375,21 @@ class GradientOptimizer(object):
         if output_majority:
             if results.majority_xx is not None:
                 asimg = results.majority_xx[self.channel_swap_to_rgb].transpose((1,2,0))
-                saveimagescc('%smajority_X.jpg' % prefix, asimg, 0)
-                saveimagesc('%smajority_Xpm.jpg' % prefix, asimg + self._data_mean_rgb_img)  # PlusMean
+                # saveimagescc('%smajority_X.tiff' % prefix, asimg, 0)
+                saveimagesc('%smajority_Xpm.tiff' % prefix, asimg + self._data_mean_rgb_img)  # PlusMean
 
         if results.best_xx is not None:
             asimg = results.best_xx[self.channel_swap_to_rgb].transpose((1,2,0))
-            saveimagescc('%sbest_X.jpg' % prefix, asimg, 0)
-            saveimagesc('%sbest_Xpm.jpg' % prefix, asimg + self._data_mean_rgb_img)  # PlusMean
+            # saveimagescc('%sbest_X.tiff' % prefix, asimg, 0)
+            saveimagesc('%sbest_Xpm.tiff' % prefix, asimg + self._data_mean_rgb_img)  # PlusMean
 
-        with open('%sinfo.txt' % prefix, 'w') as ff:
-            print >>ff, params
-            print >>ff
-            print >>ff, results
+        # with open('%sinfo.txt' % prefix, 'w') as ff:
+        #     print >>ff, params
+        #     print >>ff
+        #     print >>ff, results
         if not skipbig:
             with open('%sinfo_big.pkl' % prefix, 'w') as ff:
                 pickle.dump((params, results), ff, protocol=-1)
         results.trim_arrays()
-        with open('%sinfo.pkl' % prefix, 'w') as ff:
-            pickle.dump((params, results), ff, protocol=-1)
+        # with open('%sinfo.pkl' % prefix, 'w') as ff:
+        #     pickle.dump((params, results), ff, protocol=-1)

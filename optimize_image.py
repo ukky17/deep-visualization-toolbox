@@ -40,7 +40,7 @@ def get_parser():
     parser.add_argument('--rand-seed', type = int, default = 0,
                         help = 'Random seed used for generating the start-at image (use different seeds to generate different images).')
 
-    # What to optimize
+    # What to optimize [NEED MODIFICATIONS!]
     parser.add_argument('--push-layer', type = str, default = 'fc8',
                         help = 'Name of layer that contains the desired neuron whose value is optimized.')
     parser.add_argument('--push-channel', type = int, default = '130',
@@ -51,11 +51,11 @@ def get_parser():
                         help = 'Which direction to push the activation of the selected neuron, that is, the value used to begin backprop. For example, use 1 to maximize the selected neuron activation and  -1 to minimize it.')
 
     # Use regularization?
-    parser.add_argument('--decay', type = float, default = 0,
+    parser.add_argument('--decay', type = float, default = 0.0001,
                         help = 'Amount of L2 decay to use.')
-    parser.add_argument('--blur-radius', type = float, default = 0,
+    parser.add_argument('--blur-radius', type = float, default = 1.0,
                         help = 'Radius in pixels of blur to apply after each BLUR_EVERY steps. If 0, perform no blurring. Blur sizes between 0 and 0.3 work poorly.')
-    parser.add_argument('--blur-every', type = int, default = 0,
+    parser.add_argument('--blur-every', type = int, default = 4,
                         help = 'Blur every BLUR_EVERY steps. If 0, perform no blurring.')
     parser.add_argument('--small-val-percentile', type = float, default = 0,
                         help = 'Induce sparsity by setting pixels with absolute value under SMALL_VAL_PERCENTILE percentile to 0. Not discussed in paper. 0 to disable.')
@@ -69,9 +69,9 @@ def get_parser():
     # How much to optimize
     parser.add_argument('--lr-policy', type = str, default = 'constant', choices = LR_POLICY_CHOICES,
                         help = 'Learning rate policy. See description in lr-params.')
-    parser.add_argument('--lr-params', type = str, default = '{"lr": 1}',
+    parser.add_argument('--lr-params', type = str, default = '{"lr": 100}',
                         help = 'Learning rate params, specified as a string that evalutes to a Python dict. Params that must be provided dependon which lr-policy is selected. The "constant" policy requires the "lr" key and uses the constant given learning rate. The "progress" policy requires the "max_lr" and "desired_prog" keys and scales the learning rate such that the objective function will change by an amount equal to DESIRED_PROG under a linear objective assumption, except the LR is limited to MAX_LR. The "progress01" policy requires the "max_lr", "early_prog", and "late_prog_mult" keys and is tuned for optimizing neurons with outputs in the [0,1] range, e.g. neurons on a softmax layer. Under this policy optimization slows down as the output approaches 1 (see code for details).')
-    parser.add_argument('--max-iter', type = int, default = 500,
+    parser.add_argument('--max-iter', type = int, default = 100,
                         help = 'Number of iterations of the optimization loop.')
 
     # Where to save results
@@ -80,8 +80,8 @@ def get_parser():
     parser.add_argument('--output-template', type = str, default = '%(p.push_layer)s_%(p.push_channel)04d_%(p.rand_seed)d',
                         help = 'Output filename template; see code for details (default: "%%(p.push_layer)s_%%(p.push_channel)04d_%%(p.rand_seed)d"). '
                         'The default output-prefix and output-template produce filenames like "optimize_results/opt_prob_0278_0_best_X.jpg"')
-    parser.add_argument('--brave', action = 'store_true', help = 'Allow overwriting existing results files. Default: off, i.e. cowardly refuse to overwrite existing files.')
-    parser.add_argument('--skipbig', action = 'store_true', help = 'Skip outputting large *info_big.pkl files (contains pickled version of x0, last x, best x, first x that attained max on the specified layer.')
+    parser.add_argument('--brave', default = True, action = 'store_true', help = 'Allow overwriting existing results files. Default: off, i.e. cowardly refuse to overwrite existing files.')
+    parser.add_argument('--skipbig', default = True, action = 'store_true', help = 'Skip outputting large *info_big.pkl files (contains pickled version of x0, last x, best x, first x that attained max on the specified layer.')
 
     return parser
 
@@ -133,7 +133,7 @@ def parse_and_validate_push_spatial(parser, push_spatial):
 def main():
     parser = get_parser()
     args = parser.parse_args()
-    
+
     # Finish parsing args
     channel_swap_to_rgb = eval(args.channel_swap_to_rgb)
     assert isinstance(channel_swap_to_rgb, tuple) and len(channel_swap_to_rgb) > 0, 'channel_swap_to_rgb should be a tuple'
@@ -143,7 +143,9 @@ def main():
 
     lr_params = parse_and_validate_lr_params(parser, args.lr_policy, args.lr_params)
     push_spatial = parse_and_validate_push_spatial(parser, args.push_spatial)
-    
+
+    push_spatial = (13, 13)
+
     # Load mean
     data_mean = eval(args.mean)
 
@@ -172,8 +174,8 @@ def main():
         while len(data_mean.shape) < 3:
             data_mean = np.expand_dims(data_mean, -1)
 
-    print 'Using mean:', repr(data_mean)
-            
+    # print 'Using mean:', repr(data_mean)
+
     # Load network
     sys.path.insert(0, os.path.join(args.caffe_root, 'python'))
     import caffe
@@ -192,7 +194,7 @@ def main():
     optimizer = GradientOptimizer(net, data_mean, labels = labels,
                                   label_layers = settings.caffevis_label_layers,
                                   channel_swap_to_rgb = channel_swap_to_rgb)
-    
+
     params = FindParams(
         start_at = args.start_at,
         rand_seed = args.rand_seed,
