@@ -45,8 +45,8 @@ def get_parser():
                         help = 'Name of layer that contains the desired neuron whose value is optimized.')
     parser.add_argument('--push-channel', type = int, default = '130',
                         help = 'Channel number for desired neuron whose value is optimized (channel for conv, neuron index for FC).')
-    parser.add_argument('--push-spatial', type = str, default = 'None',
-                        help = 'Which spatial location to push for conv layers. For FC layers, set this to None. For conv layers, set it to a tuple, e.g. when using `--push-layer conv5` on AlexNet, --push-spatial (6,6) will maximize the center unit of the 13x13 spatial grid.')
+    parser.add_argument('--push-spatial', type = int, default = 'None',
+                        help = 'Which spatial location to push for conv layers. For FC layers, set this to None. For conv layers, set it to a number, e.g. when using `--push-layer conv5` on AlexNet, --push-spatial 6 will maximize the center unit (6,6) of the 13x13 spatial grid.')
     parser.add_argument('--push-dir', type = float, default = 1,
                         help = 'Which direction to push the activation of the selected neuron, that is, the value used to begin backprop. For example, use 1 to maximize the selected neuron activation and  -1 to minimize it.')
 
@@ -142,9 +142,10 @@ def main():
     #channel_swap_inv = tuple([net_channel_swap.index(ii) for ii in range(len(net_channel_swap))])
 
     lr_params = parse_and_validate_lr_params(parser, args.lr_policy, args.lr_params)
-    push_spatial = parse_and_validate_push_spatial(parser, args.push_spatial)
+    # push_spatial = parse_and_validate_push_spatial(parser, args.push_spatial)
 
-    push_spatial = (13, 13)
+    # push_spatial = (13, 13)
+    push_spatial = (args.push_spatial, args.push_spatial)
 
     # Load mean
     data_mean = eval(args.mean)
