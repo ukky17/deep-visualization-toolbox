@@ -4,3 +4,4 @@ settings.py.templatec
 *.DS_Store
 
 models/
+*.tiff
