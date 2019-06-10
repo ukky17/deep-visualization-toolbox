@@ -48,4 +48,4 @@ for i in tqdm(range(len(layers))):
         img_enhanced = img_enhanced * mask / 255.0 + 128
 
         # save
-        cv2.imwrite('processed_images/proc_' + file[20: ], img_enhanced)
+        cv2.imwrite('processed_images/proc_' + file[21: ], img_enhanced)
