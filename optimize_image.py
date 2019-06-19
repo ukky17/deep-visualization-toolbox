@@ -29,8 +29,8 @@ def get_parser():
                         help = '''Mean. The mean may be None, a tuple of one mean value per channel, or a string specifying the path to a mean image to load. Because of the multiple datatypes supported, this argument must be specified as a string that evaluates to a valid Python object. For example: "None", "(10,20,30)", and "'mean.npy'" are all valid values. Note that to specify a string path to a mean file, it must be passed with quotes, which usually entails passing it with double quotes in the shell! Alternately, just provide the mean in settings_local.py.''')
     parser.add_argument('--channel-swap-to-rgb', type = str, default = '(2,1,0)',
                         help = 'Permutation to apply to channels to change to RGB space for plotting. Hint: (0,1,2) if your network is trained for RGB, (2,1,0) if it is trained for BGR.')
-    parser.add_argument('--data-size', type = str, default = '(227,227)',
-                        help = 'Size of network input.')
+    parser.add_argument('--data-size', type = str, default = '227',
+                        help = 'Size of network input. 227 means (227, 227).')
 
     #### FindParams
 
@@ -69,9 +69,9 @@ def get_parser():
     # How much to optimize
     parser.add_argument('--lr-policy', type = str, default = 'constant', choices = LR_POLICY_CHOICES,
                         help = 'Learning rate policy. See description in lr-params.')
-    parser.add_argument('--lr-params', type = str, default = '{"lr": 100}',
+    parser.add_argument('--lr-params', type = str, default = '{"lr": 1}',
                         help = 'Learning rate params, specified as a string that evalutes to a Python dict. Params that must be provided dependon which lr-policy is selected. The "constant" policy requires the "lr" key and uses the constant given learning rate. The "progress" policy requires the "max_lr" and "desired_prog" keys and scales the learning rate such that the objective function will change by an amount equal to DESIRED_PROG under a linear objective assumption, except the LR is limited to MAX_LR. The "progress01" policy requires the "max_lr", "early_prog", and "late_prog_mult" keys and is tuned for optimizing neurons with outputs in the [0,1] range, e.g. neurons on a softmax layer. Under this policy optimization slows down as the output approaches 1 (see code for details).')
-    parser.add_argument('--max-iter', type = int, default = 100,
+    parser.add_argument('--max-iter', type = int, default = 500,
                         help = 'Number of iterations of the optimization loop.')
 
     # Where to save results
@@ -138,7 +138,7 @@ def main():
     channel_swap_to_rgb = eval(args.channel_swap_to_rgb)
     assert isinstance(channel_swap_to_rgb, tuple) and len(channel_swap_to_rgb) > 0, 'channel_swap_to_rgb should be a tuple'
     data_size = eval(args.data_size)
-    assert isinstance(data_size, tuple) and len(data_size) == 2, 'data_size should be a length 2 tuple'
+    # assert isinstance(data_size, tuple) and len(data_size) == 2, 'data_size should be a length 2 tuple'
     #channel_swap_inv = tuple([net_channel_swap.index(ii) for ii in range(len(net_channel_swap))])
 
     lr_params = parse_and_validate_lr_params(parser, args.lr_policy, args.lr_params)
@@ -162,10 +162,10 @@ def main():
             print 'Or to use your own mean, change caffevis_data_mean in settings_local.py or override by running with `--mean MEAN_FILE` (see --help).\n'
             raise
         # Crop center region (e.g. 227x227) if mean is larger (e.g. 256x256)
-        excess_h = data_mean.shape[1] - data_size[0]
-        excess_w = data_mean.shape[2] - data_size[1]
+        excess_h = data_mean.shape[1] - data_size
+        excess_w = data_mean.shape[2] - data_size
         assert excess_h >= 0 and excess_w >= 0, 'mean should be at least as large as %s' % repr(data_size)
-        data_mean = data_mean[:, (excess_h/2):(excess_h/2+data_size[0]), (excess_w/2):(excess_w/2+data_size[1])]
+        data_mean = data_mean[:, (excess_h/2):(excess_h/2+data_size), (excess_w/2):(excess_w/2+data_size)]
     elif data_mean is None:
         pass
     else:
