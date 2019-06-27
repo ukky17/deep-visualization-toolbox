@@ -71,7 +71,7 @@ def get_parser():
                         help = 'Learning rate policy. See description in lr-params.')
     parser.add_argument('--lr-params', type = str, default = '{"lr": 1}',
                         help = 'Learning rate params, specified as a string that evalutes to a Python dict. Params that must be provided dependon which lr-policy is selected. The "constant" policy requires the "lr" key and uses the constant given learning rate. The "progress" policy requires the "max_lr" and "desired_prog" keys and scales the learning rate such that the objective function will change by an amount equal to DESIRED_PROG under a linear objective assumption, except the LR is limited to MAX_LR. The "progress01" policy requires the "max_lr", "early_prog", and "late_prog_mult" keys and is tuned for optimizing neurons with outputs in the [0,1] range, e.g. neurons on a softmax layer. Under this policy optimization slows down as the output approaches 1 (see code for details).')
-    parser.add_argument('--max-iter', type = int, default = 500,
+    parser.add_argument('--max-iter', type = int, default = 100,
                         help = 'Number of iterations of the optimization loop.')
 
     # Where to save results
