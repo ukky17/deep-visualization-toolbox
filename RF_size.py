@@ -14,9 +14,31 @@
 # - start_i: position of the first feature's receptive field in layer i (idx start from 0, negative means the center fall into padding)
 
 import math
+# Alexnet
+"""
 convnet =   [[11,4,0],[3,2,0],[5,1,2],[3,2,0],[3,1,1],[3,1,1],[3,1,1],[3,2,0],[6,1,0], [1, 1, 0]]
 layer_names = ['conv1','pool1','conv2','pool2','conv3','conv4','conv5','pool5','fc6-conv', 'fc7-conv']
 imsize = 227
+"""
+
+# VGG16
+"""
+convnet = [[3, 1, 1], [3, 1, 1], [2, 2, 0], [3, 1, 1], [3, 1, 1], [2, 2, 0],
+           [3, 1, 1], [3, 1, 1], [3, 1, 1], [2, 2, 0],
+           [3, 1, 1], [3, 1, 1], [3, 1, 1], [2, 2, 0],
+           [3, 1, 1], [3, 1, 1], [3, 1, 1], [2, 2, 0], [7, 1, 0], [1, 1, 0]]
+layer_names = ['conv1_1', 'conv1_2', 'pool1', 'conv2_1', 'conv2_2', 'pool2',
+               'conv3_1','conv3_2', 'conv3_3', 'pool3',
+               'conv4_1','conv4_2', 'conv4_3', 'pool4',
+               'conv5_1','conv5_2', 'conv5_3', 'pool5', 'fc1', 'fc2']
+imsize = 224
+"""
+
+# cifar-10
+convnet = [[3, 1, 0], [3, 2, 0], [3, 1, 0], [3, 2, 0], [3, 1, 0], [3, 2, 0]]
+layer_names = ['layer1', 'layer2', 'layer3', 'layer4', 'layer5', 'layer6']
+imsize = 32
+
 
 def outFromIn(conv, layerIn):
   n_in = layerIn[0]
